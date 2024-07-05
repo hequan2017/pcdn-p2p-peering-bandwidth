@@ -24,9 +24,6 @@ type Config struct {
 
 const HAND_SHAKE_MSG = "我是打洞消息"
 
-var uploadRateFixed = 0.00
-var uploadRateDynamics = 0.00
-
 func parseAddr(addr string) net.UDPAddr {
 	t := strings.Split(addr, ":")
 	port, _ := strconv.Atoi(t[1])
@@ -40,7 +37,10 @@ type SpeedInfo struct {
 	MaxDownloadRate float64 `json:"maxDownloadRate"`
 }
 
-func bidirectionalHole(log *log.Logger, srcAddr *net.UDPAddr, anotherAddr *net.UDPAddr, hequanid, Tohequanid string, uploadRate float64, downloadRate float64) {
+func bidirectionalHole(log *log.Logger, srcAddr *net.UDPAddr, anotherAddr *net.UDPAddr, MachineID, ToMachineID string, uploadRate float64, downloadRate float64) {
+
+	var uploadRateFixed = 0.00
+	var uploadRateDynamics = 0.00
 
 	conn, err := net.DialUDP("udp", srcAddr, anotherAddr)
 	if err != nil {
@@ -56,19 +56,23 @@ func bidirectionalHole(log *log.Logger, srcAddr *net.UDPAddr, anotherAddr *net.U
 			pattern := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 			data := bytes.Repeat(pattern, 1*1024*1024/len(pattern))
 			packetSize := 1400 // 根据实际情况设置包的大小
-			//startTime := time.Now()
+			startTime := time.Now()
 			upload := uploadRate
+			uploadRateFixed = uploadRate
+
 			if uploadRateFixed != 0.00 && uploadRateDynamics != 0.00 {
-				if uploadRateFixed > uploadRateDynamics {
-					upload = uploadRateDynamics * 1.2
+				if uploadRateFixed > uploadRateDynamics*1.1 {
+					upload = uploadRateDynamics * 1.1
+					fmt.Printf("本机固定上传带宽 大于 对方实际跑的下载带宽，开始降低本机上传网速！！！\n本机固定上传带宽:%.2f  |   对方实际跑的下载带宽:%.2f    |    本机限速上传:%.2f\n", uploadRateFixed, uploadRateDynamics, upload)
 				}
 			}
-			_ = sendLargeData(log, conn, data, packetSize, upload) // 调用函数
-			//totalBytesSent := sendLargeData(log, conn, data, packetSize, upload) // 调用函数
-			//elapsedTime := time.Since(startTime) // 计算发送数据所花费的总时间
-			//uploadSpeedMbps := (float64(totalBytesSent) * 8) / (1024 * 1024) / elapsedTime.Seconds()
-			//fmt.Printf("%s --> %s -------------上传速率: %.2f Mbps\n", hequanid, Tohequanid, uploadSpeedMbps)
-			//log.Printf("%s --> %s -------------上传速率: %.2f Mbps\n", hequanid, Tohequanid, uploadSpeedMbps)
+			_ = sendLargeData(log, conn, data, packetSize, upload)               // 调用函数
+			totalBytesSent := sendLargeData(log, conn, data, packetSize, upload) // 调用函数
+			elapsedTime := time.Since(startTime)                                 // 计算发送数据所花费的总时间
+
+			uploadSpeedMbps := (float64(totalBytesSent) * 8) / (1024 * 1024) / elapsedTime.Seconds()
+			fmt.Printf("%s --> %s -------------上传速率: %.2f Mbps\n", MachineID, ToMachineID, uploadSpeedMbps)
+			//log.Printf("%s --> %s -------------上传速率: %.2f Mbps\n", MachineID, ToMachineID, uploadSpeedMbps)
 
 		}
 	}()
@@ -94,7 +98,7 @@ func bidirectionalHole(log *log.Logger, srcAddr *net.UDPAddr, anotherAddr *net.U
 			elapsed := time.Since(totalStartTime)
 			if elapsed >= 5*time.Second { // 如果超过或等于10秒，计算并打印速率
 				speedMbps := (float64(totalBytes) * 8) / (1024 * 1024) / elapsed.Seconds() // 转换为Mbps
-				fmt.Printf("%s <-- %s -------------下载速率: %.2f Mbps \n", hequanid, Tohequanid, speedMbps)
+				fmt.Printf("%s <-- %s -------------下载速率: %.2f Mbps \n", MachineID, ToMachineID, speedMbps)
 				// 重置计数器和计时器
 				totalBytes = 0
 				totalStartTime = time.Now()
@@ -102,8 +106,8 @@ func bidirectionalHole(log *log.Logger, srcAddr *net.UDPAddr, anotherAddr *net.U
 				infoData, _ := json.Marshal(speedInfo)
 				conn.Write(infoData) // 发送当前上传速率信息
 
-				if elapsed >= 600*time.Second {
-					log.Printf("%s <-- %s -------------下载速率: %.2f Mbps \n", hequanid, Tohequanid, speedMbps)
+				if elapsed >= 300*time.Second {
+					log.Printf("%s <-- %s -------------下载速率: %.2f Mbps \n", MachineID, ToMachineID, speedMbps)
 				}
 			}
 
@@ -112,10 +116,10 @@ func bidirectionalHole(log *log.Logger, srcAddr *net.UDPAddr, anotherAddr *net.U
 				var speedInfo SpeedInfo
 				if err := json.Unmarshal(data[:n], &speedInfo); err == nil {
 					// 成功解析为速度信息
-					fmt.Printf("%s -->>>> %s ----对方服务器-------下载速率: %.2f Mbps \n", hequanid, Tohequanid, speedInfo.MaxDownloadRate)
+					fmt.Printf("%s -->>>> %s ----对方服务器-------下载速率: %.2f Mbps \n", MachineID, ToMachineID, speedInfo.MaxDownloadRate)
 					uploadRateDynamics = speedInfo.MaxDownloadRate
 					if elapsed >= 600*time.Second {
-						log.Printf("%s -->>>> %s ----对方服务器-------下载速率: %.2f Mbps \n", hequanid, Tohequanid, speedInfo.MaxDownloadRate)
+						log.Printf("%s -->>>> %s ----对方服务器-------下载速率: %.2f Mbps \n", MachineID, ToMachineID, speedInfo.MaxDownloadRate)
 					}
 				}
 			}
@@ -184,7 +188,7 @@ func main() {
 		flag.Usage()
 		os.Exit(1) // 退出程序
 	}
-	uploadRateFixed = *uploadRate
+
 	networkList := strings.Split(*network, ",")
 
 	for _, v := range networkList {
