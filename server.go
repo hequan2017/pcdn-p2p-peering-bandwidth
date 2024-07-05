@@ -30,7 +30,7 @@ var (
 )
 
 func main() {
-	listener, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 9981})
+	listener, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 9999})
 	if err != nil {
 		fmt.Println(err)
 		return
