@@ -12,7 +12,7 @@
 >  ./server
 
 ### 第一台
->  ./peer  --id="321" --serverip="" --serverport=10000 --clientport=9999 --network="eth0" --toid="123"  --time=10     --uploadrate=1 --downloadrate=1
+>  ./peer  --hequanid="321" --serverip="" --serverport=10000 --clientport=9999 --network="eth0" --tohequanid="123"  --time=10     --uploadrate=1 --downloadrate=1
 
 ### 第二台
->  ./peer  --id="123" --serverip="" --serverport=10000 --clientport=9999 --network="eth0" --toid="321"  --time=10     --uploadrate=1 --downloadrate=1
+>  ./peer  --hequanid="123" --serverip="" --serverport=10000 --clientport=9999 --network="eth0" --tohequanid="321"  --time=10     --uploadrate=1 --downloadrate=1
