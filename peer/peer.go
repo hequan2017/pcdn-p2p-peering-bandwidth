@@ -14,11 +14,11 @@ import (
 )
 
 type Config struct {
-	hequanid   string `json:"hequanid"`
-	ServerIP    string `json:"serverip"`
-	ServerPort  int    `json:"serverport"`
-	ClientPort  int    `json:"clientport"`
-	Network     string `json:"network"`
+	Hequanid   string `json:"hequanid"`
+	ServerIP   string `json:"serverip"`
+	ServerPort int    `json:"serverport"`
+	ClientPort int    `json:"clientport"`
+	Network    string `json:"network"`
 	Tohequanid string `json:"tohequanid"`
 }
 
@@ -209,11 +209,11 @@ func main() {
 						//logger.Printf("hequanid: %s, Network: %s, Tohequanid: %s  \n", *hequanid, *network, *tohequanid)
 
 						tag := Config{
-							hequanid:   *hequanid + "_" + v,
-							ServerIP:    *serverIP,
-							ServerPort:  *serverPort,
-							ClientPort:  *clientPort,
-							Network:     *network,
+							Hequanid:   *hequanid + "_" + v,
+							ServerIP:   *serverIP,
+							ServerPort: *serverPort,
+							ClientPort: *clientPort,
+							Network:    *network,
 							Tohequanid: *tohequanid + "_" + v,
 						}
 
