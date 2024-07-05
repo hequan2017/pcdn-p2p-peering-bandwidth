@@ -14,12 +14,12 @@ import (
 )
 
 type Config struct {
-	ID         string `json:"ID"`
-	ServerIP   string `json:"serverip"`
-	ServerPort int    `json:"serverport"`
-	ClientPort int    `json:"clientport"`
-	Network    string `json:"network"`
-	ToID       string `json:"toID"`
+	hequanid   string `json:"hequanid"`
+	ServerIP    string `json:"serverip"`
+	ServerPort  int    `json:"serverport"`
+	ClientPort  int    `json:"clientport"`
+	Network     string `json:"network"`
+	Tohequanid string `json:"tohequanid"`
 }
 
 const HAND_SHAKE_MSG = "我是打洞消息"
@@ -40,7 +40,7 @@ type SpeedInfo struct {
 	MaxDownloadRate float64 `json:"maxDownloadRate"`
 }
 
-func bidirectionalHole(log *log.Logger, srcAddr *net.UDPAddr, anotherAddr *net.UDPAddr, ID, ToID string, uploadRate float64, downloadRate float64) {
+func bidirectionalHole(log *log.Logger, srcAddr *net.UDPAddr, anotherAddr *net.UDPAddr, hequanid, Tohequanid string, uploadRate float64, downloadRate float64) {
 
 	conn, err := net.DialUDP("udp", srcAddr, anotherAddr)
 	if err != nil {
@@ -67,8 +67,8 @@ func bidirectionalHole(log *log.Logger, srcAddr *net.UDPAddr, anotherAddr *net.U
 			//totalBytesSent := sendLargeData(log, conn, data, packetSize, upload) // 调用函数
 			//elapsedTime := time.Since(startTime) // 计算发送数据所花费的总时间
 			//uploadSpeedMbps := (float64(totalBytesSent) * 8) / (1024 * 1024) / elapsedTime.Seconds()
-			//fmt.Printf("%s --> %s -------------上传速率: %.2f Mbps\n", ID, ToID, uploadSpeedMbps)
-			//log.Printf("%s --> %s -------------上传速率: %.2f Mbps\n", ID, ToID, uploadSpeedMbps)
+			//fmt.Printf("%s --> %s -------------上传速率: %.2f Mbps\n", hequanid, Tohequanid, uploadSpeedMbps)
+			//log.Printf("%s --> %s -------------上传速率: %.2f Mbps\n", hequanid, Tohequanid, uploadSpeedMbps)
 
 		}
 	}()
@@ -94,7 +94,7 @@ func bidirectionalHole(log *log.Logger, srcAddr *net.UDPAddr, anotherAddr *net.U
 			elapsed := time.Since(totalStartTime)
 			if elapsed >= 5*time.Second { // 如果超过或等于10秒，计算并打印速率
 				speedMbps := (float64(totalBytes) * 8) / (1024 * 1024) / elapsed.Seconds() // 转换为Mbps
-				fmt.Printf("%s <-- %s -------------下载速率: %.2f Mbps \n", ID, ToID, speedMbps)
+				fmt.Printf("%s <-- %s -------------下载速率: %.2f Mbps \n", hequanid, Tohequanid, speedMbps)
 				// 重置计数器和计时器
 				totalBytes = 0
 				totalStartTime = time.Now()
@@ -103,7 +103,7 @@ func bidirectionalHole(log *log.Logger, srcAddr *net.UDPAddr, anotherAddr *net.U
 				conn.Write(infoData) // 发送当前上传速率信息
 
 				if elapsed >= 600*time.Second {
-					log.Printf("%s <-- %s -------------下载速率: %.2f Mbps \n", ID, ToID, speedMbps)
+					log.Printf("%s <-- %s -------------下载速率: %.2f Mbps \n", hequanid, Tohequanid, speedMbps)
 				}
 			}
 
@@ -112,10 +112,10 @@ func bidirectionalHole(log *log.Logger, srcAddr *net.UDPAddr, anotherAddr *net.U
 				var speedInfo SpeedInfo
 				if err := json.Unmarshal(data[:n], &speedInfo); err == nil {
 					// 成功解析为速度信息
-					fmt.Printf("%s -->>>> %s ----对方服务器-------下载速率: %.2f Mbps \n", ID, ToID, speedInfo.MaxDownloadRate)
+					fmt.Printf("%s -->>>> %s ----对方服务器-------下载速率: %.2f Mbps \n", hequanid, Tohequanid, speedInfo.MaxDownloadRate)
 					uploadRateDynamics = speedInfo.MaxDownloadRate
 					if elapsed >= 600*time.Second {
-						log.Printf("%s -->>>> %s ----对方服务器-------下载速率: %.2f Mbps \n", ID, ToID, speedInfo.MaxDownloadRate)
+						log.Printf("%s -->>>> %s ----对方服务器-------下载速率: %.2f Mbps \n", hequanid, Tohequanid, speedInfo.MaxDownloadRate)
 					}
 				}
 			}
@@ -158,12 +158,12 @@ func main() {
 	logger := log.New(logFile, "", log.Ldate|log.Ltime)
 
 	// 定义命令行参数
-	ID := flag.String("ID", "", "Identifier of the machine")
+	hequanid := flag.String("hequanid", "", "Identifier of the machine")
 	serverIP := flag.String("serverip", "", "IP address of the server")
 	serverPort := flag.Int("serverport", 0, "Port number of the server")
 	clientPort := flag.Int("clientport", 0, "Client port number to use")
 	network := flag.String("network", "", "Network interfaces to use")
-	toID := flag.String("toID", "", "to Target machine identifier")
+	tohequanid := flag.String("tohequanid", "", "to Target machine identifier")
 	timeout := flag.Int("time", 0, "Timeout in minutes after which the program will exit")
 	uploadRate := flag.Float64("uploadrate", 0, "uploadrate rate in Mbps")
 	downloadRate := flag.Float64("downloadrate", 0, "downloadrate rate in Mbps")
@@ -179,7 +179,7 @@ func main() {
 	logger.Printf("------------------程序运行超过 %d 分钟，将会自动退出。-------------------------\n", *timeout)
 
 	// 参数验证
-	if *ID == "" || *serverIP == "" || *serverPort == 0 || *clientPort == 0 || *network == "" || *toID == "" || *timeout == 0 || *uploadRate == 0 || *downloadRate == 0 {
+	if *hequanid == "" || *serverIP == "" || *serverPort == 0 || *clientPort == 0 || *network == "" || *tohequanid == "" || *timeout == 0 || *uploadRate == 0 || *downloadRate == 0 {
 		logger.Println("All parameters are required and must not be empty")
 		flag.Usage()
 		os.Exit(1) // 退出程序
@@ -206,15 +206,15 @@ func main() {
 						defer conn.Close()
 						// 连接成功，打印配置信息
 						logger.Printf("Connected to %s from %s\n", dstAddr, srcAddr)
-						//logger.Printf("ID: %s, Network: %s, ToID: %s  \n", *ID, *network, *toID)
+						//logger.Printf("hequanid: %s, Network: %s, Tohequanid: %s  \n", *hequanid, *network, *tohequanid)
 
 						tag := Config{
-							ID:         *ID + "_" + v,
-							ServerIP:   *serverIP,
-							ServerPort: *serverPort,
-							ClientPort: *clientPort,
-							Network:    *network,
-							ToID:       *toID + "_" + v,
+							hequanid:   *hequanid + "_" + v,
+							ServerIP:    *serverIP,
+							ServerPort:  *serverPort,
+							ClientPort:  *clientPort,
+							Network:     *network,
+							Tohequanid: *tohequanid + "_" + v,
 						}
 
 						tagStr, _ := json.Marshal(tag)
@@ -233,7 +233,7 @@ func main() {
 
 						// 开始打洞
 
-						bidirectionalHole(logger, srcAddr, &anotherPeer, *ID+"_"+v, *toID+"_"+v, *uploadRate, *downloadRate)
+						bidirectionalHole(logger, srcAddr, &anotherPeer, *hequanid+"_"+v, *tohequanid+"_"+v, *uploadRate, *downloadRate)
 					}
 				}
 			}
