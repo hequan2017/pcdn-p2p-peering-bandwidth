@@ -10,12 +10,12 @@ import (
 )
 
 type Config struct {
-	ID         string `json:"ID"`
-	ServerIP   string `json:"serverip"`
-	ServerPort int    `json:"serverport"`
-	ClientPort int    `json:"clientport"`
-	Network    string `json:"network"`
-	ToID       string `json:"toID"`
+	hequanid   string `json:"hequanid"`
+	ServerIP    string `json:"serverip"`
+	ServerPort  int    `json:"serverport"`
+	ClientPort  int    `json:"clientport"`
+	Network     string `json:"network"`
+	Tohequanid string `json:"tohequanid"`
 }
 
 type Peer struct {
@@ -56,23 +56,23 @@ func main() {
 		}
 
 		mu.Lock()
-		configs[config.ID] = config
-		peers[config.ID] = Peer{Addr: *remoteAddr, Timestamp: time.Now()}
+		configs[config.hequanid] = config
+		peers[config.hequanid] = Peer{Addr: *remoteAddr, Timestamp: time.Now()}
 		mu.Unlock()
 
 		mu.Lock()
-		targetConfig, exists := configs[config.ToID]
+		targetConfig, exists := configs[config.Tohequanid]
 		if exists {
-			targetPeer, addrExists := peers[targetConfig.ID]
+			targetPeer, addrExists := peers[targetConfig.hequanid]
 			if addrExists {
-				message := fmt.Sprintf("给 %s 的 目标server: %s", config.ID, targetPeer.Addr.String())
-				message1 := fmt.Sprintf("给 %s 的 目标server: %s", config.ToID, remoteAddr.String())
-				sourcePeer := peers[config.ToID]
+				message := fmt.Sprintf("给 %s 的 目标server: %s", config.hequanid, targetPeer.Addr.String())
+				message1 := fmt.Sprintf("给 %s 的 目标server: %s", config.Tohequanid, remoteAddr.String())
+				sourcePeer := peers[config.Tohequanid]
 				listener.WriteToUDP([]byte(targetPeer.Addr.String()), remoteAddr)
 				listener.WriteToUDP([]byte(remoteAddr.String()), &sourcePeer.Addr)
 				log.Printf(" \n %s \n %s \n", message, message1)
-				delete(configs, config.ID)
-				delete(configs, config.ToID)
+				delete(configs, config.hequanid)
+				delete(configs, config.Tohequanid)
 			}
 		}
 		log.Printf("当前configs数量: %d ", len(configs))
