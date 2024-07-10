@@ -39,9 +39,6 @@ type SpeedInfo struct {
 
 func bidirectionalHole(log *log.Logger, srcAddr *net.UDPAddr, anotherAddr *net.UDPAddr, MachineID, ToMachineID string, uploadRate float64, downloadRate float64) {
 
-	var uploadRateFixed = 0.00
-	var uploadRateDynamics = 0.00
-
 	conn, err := net.DialUDP("udp", srcAddr, anotherAddr)
 	if err != nil {
 		fmt.Println(err)
@@ -58,14 +55,8 @@ func bidirectionalHole(log *log.Logger, srcAddr *net.UDPAddr, anotherAddr *net.U
 			packetSize := 1400 // 根据实际情况设置包的大小
 			startTime := time.Now()
 			upload := uploadRate
-			uploadRateFixed = uploadRate
+			
 
-			if uploadRateFixed != 0.00 && uploadRateDynamics != 0.00 {
-				if uploadRateFixed > uploadRateDynamics*1.1 {
-					upload = uploadRateDynamics * 1.1
-					fmt.Printf("本机固定上传带宽 大于 对方实际跑的下载带宽，开始降低本机上传网速！！！\n本机固定上传带宽:%.2f  |   对方实际跑的下载带宽:%.2f    |    本机限速上传:%.2f\n", uploadRateFixed, uploadRateDynamics, upload)
-				}
-			}
 			_ = sendLargeData(log, conn, data, packetSize, upload)               // 调用函数
 			totalBytesSent := sendLargeData(log, conn, data, packetSize, upload) // 调用函数
 			elapsedTime := time.Since(startTime)                                 // 计算发送数据所花费的总时间
@@ -117,7 +108,7 @@ func bidirectionalHole(log *log.Logger, srcAddr *net.UDPAddr, anotherAddr *net.U
 				if err := json.Unmarshal(data[:n], &speedInfo); err == nil {
 					// 成功解析为速度信息
 					fmt.Printf("%s -->>>> %s ----对方服务器-------下载速率: %.2f Mbps \n", MachineID, ToMachineID, speedInfo.MaxDownloadRate)
-					uploadRateDynamics = speedInfo.MaxDownloadRate
+					
 					if elapsed >= 600*time.Second {
 						log.Printf("%s -->>>> %s ----对方服务器-------下载速率: %.2f Mbps \n", MachineID, ToMachineID, speedInfo.MaxDownloadRate)
 					}
